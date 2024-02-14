@@ -90,7 +90,7 @@ namespace Antymology.Terrain
         /// </summary>
         private void GenerateAnts()
         {
-            int numberOfAntsToSpawn = 1000;
+            int numberOfAntsToSpawn = 10;
 
             for (int i = 0; i < numberOfAntsToSpawn; i++){
                 int x = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
