@@ -50,6 +50,8 @@ namespace Antymology.Terrain
         /// </summary>
         void Awake()
         {
+            antPrefab = Resources.Load<GameObject>("Ant_Icon");
+
             // Generate new random number generator
             RNG = new System.Random(ConfigurationManager.Instance.Seed);
 
@@ -88,7 +90,31 @@ namespace Antymology.Terrain
         /// </summary>
         private void GenerateAnts()
         {
-            throw new NotImplementedException();
+            int numberOfAntsToSpawn = 1000;
+
+            for (int i = 0; i < numberOfAntsToSpawn; i++){
+                int x = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
+                int z = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
+                int y = 0;
+
+                for (int j = Blocks.GetLength(1) - 1; j >= 0; j--){
+                    if (!(Blocks[x, j, z] is AirBlock))
+                    {
+                        y = j + 1;
+                        break;
+                    }
+                }
+
+                if (y <= 0 || y >= Blocks.GetLength(1)){
+                    continue;
+                }
+
+                Vector3 spawnPosition = new Vector3(x, y, z);
+                GameObject Ant_Icon = Instantiate(antPrefab, spawnPosition, Quaternion.identity);
+
+                Ant_Icon.transform.parent = this.transform;
+            }
+
         }
 
         #endregion
