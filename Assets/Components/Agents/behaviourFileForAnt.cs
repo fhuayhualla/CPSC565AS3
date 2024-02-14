@@ -10,37 +10,44 @@ public class behaviourFileForAnt : MonoBehaviour
    private float changeDirectionTimer;
 
    private float minX, maxX, minZ, maxZ;
+   
+   private Rigidbody rb;
 
    void Start (){
+    rb = GetComponent<Rigidbody>();
     changeDirectionTimer = changeDirectionInterval;
-
-    minX = 0;
-    maxX = 100;
-    minZ = 0;
-    maxZ = 100;
-
+    
     ChooseNewDirection();
    }
 
    void Update(){
-    transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
+    MoveAnt();
 
-    changeDirectionTimer -= Time.deltaTime;
-    if(changeDirectionTimer <= 0){
+    if (changeDirectionTimer <= 0){
         ChooseNewDirection();
         changeDirectionTimer = changeDirectionInterval;
     }
-    transform.position = new Vector3(
-        Mathf.Clamp(transform.position.x, minX, maxX),
-        transform.position.y, 
-        Mathf.Clamp(transform.position.z, minZ, maxZ)
-    );
+    else{
+        changeDirectionTimer -= Time.fixedDeltaTime;
+    }
+    var clampedX = Mathf.Clamp(rb.position.x, minX, maxX);
+    var clampedZ = Mathf.Clamp(rb.position.z, minZ, maxZ);
+    rb.position = new Vector3(clampedX, rb.position.y, clampedZ);
+   }
+
+   void MoveAnt(){
+    Vector3 newPosition = rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime;
+    rb.MovePosition(newPosition);
    }
 
    void ChooseNewDirection(){
     float randomAngle = Random.Range(0f, 360f);
-    moveDirection = new Vector3(Mathf.Cos(randomAngle * Mathf.Deg2Rad), 0f, Mathf.Sin(randomAngle * Mathf.Deg2Rad));
+    moveDirection = new Vector3(Mathf.Cos(randomAngle * Mathf.Deg2Rad), 0, Mathf.Sin(randomAngle * Mathf.Deg2Rad));
 
     transform.rotation = Quaternion.LookRotation(moveDirection);
+   }
+
+   void OnCollisionEnter(Collision collision){
+    ChooseNewDirection();
    }
 }
