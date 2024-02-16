@@ -88,33 +88,42 @@ namespace Antymology.Terrain
         /// <summary>
         /// TO BE IMPLEMENTED BY YOU
         /// </summary>
+
+
         private void GenerateAnts()
         {
-            int numberOfAntsToSpawn = 10;
+            int numberOfAntsToSpawn = 1000;
 
-            for (int i = 0; i < numberOfAntsToSpawn; i++){
-                int x = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
-                int z = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
-                int y = 0;
+            for (int i = 0; i < numberOfAntsToSpawn; i++)
+            {
+                bool validPositionFound = false;
+                Vector3 spawnPosition = Vector3.zero;
 
-                for (int j = Blocks.GetLength(1) - 1; j >= 0; j--){
-                    if (!(Blocks[x, j, z] is AirBlock))
+                while (!validPositionFound)
+                {
+                    int x = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
+                    int z = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
+                    int y = 0;
+
+                    for (int j = Blocks.GetLength(1) - 1; j >= 0; j--)
                     {
-                        y = j + 1;
-                        break;
+                        AbstractBlock block = Blocks[x, j, z];
+                        if (block != null && !(block is AirBlock) && !(block is ContainerBlock)) // Avoid spawning on AirBlock or ContainerBlock
+                        {
+                            y = j + 1; 
+                            validPositionFound = true;
+                            spawnPosition = new Vector3(x, y, z);
+                            break;
+                        }
                     }
                 }
 
-                if (y <= 0 || y >= Blocks.GetLength(1)){
-                    continue;
+                if (validPositionFound)
+                {
+                    GameObject ant = Instantiate(antPrefab, spawnPosition, Quaternion.identity);
+                    ant.transform.parent = this.transform;
                 }
-
-                Vector3 spawnPosition = new Vector3(x, y, z);
-                GameObject Ant_Icon = Instantiate(antPrefab, spawnPosition, Quaternion.identity);
-
-                Ant_Icon.transform.parent = this.transform;
             }
-
         }
 
         #endregion

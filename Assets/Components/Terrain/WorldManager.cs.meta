@@ -4,7 +4,7 @@ MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - antPrefab: {fileID: 5873728545086349828, guid: 7771026d32f968c4ab683d1a28960175,
+  - antPrefab: {fileID: 7141960012651393014, guid: fbbf556c23c2123428ffe3125e801403,
       type: 3}
   - blockMaterial: {instanceID: 0}
   executionOrder: 0

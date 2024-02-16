@@ -4,7 +4,6 @@ using UnityEngine;
 
 public abstract class AbstractBlock
 {
-
     /// <summary>
     /// The texture map coordinates of this block.
     /// </summary>
