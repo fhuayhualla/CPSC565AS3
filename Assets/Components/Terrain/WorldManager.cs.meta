@@ -6,6 +6,8 @@ MonoImporter:
   defaultReferences:
   - antPrefab: {fileID: 7141960012651393014, guid: fbbf556c23c2123428ffe3125e801403,
       type: 3}
+  - queenAntPrefab: {fileID: 1067347123012531347, guid: ad1598190cffc7f49a40a1bc6f7cca42,
+      type: 3}
   - blockMaterial: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}

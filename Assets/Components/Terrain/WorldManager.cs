@@ -17,6 +17,11 @@ namespace Antymology.Terrain
         public GameObject antPrefab;
 
         /// <summary>
+        /// The prefab containing the queen ant.
+        /// </summary>
+        public GameObject queenAntPrefab;
+
+        /// <summary>
         /// The material used for eech block.
         /// </summary>
         public Material blockMaterial;
@@ -36,6 +41,21 @@ namespace Antymology.Terrain
         /// </summary>
         private System.Random RNG;
 
+
+        /// <summary>
+        /// Checks if the given world coordinates are within the bounds of the world.
+        /// </summary>
+        /// <param name="x">The X coordinate.</param>
+        /// <param name="y">The Y coordinate.</param>
+        /// <param name="z">The Z coordinate.</param>
+        /// <returns>true if the position is within bounds, otherwise, false.</returns>
+        public bool IsValidPosition(int x, int y, int z)
+        {
+            return x >= 0 && x < ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter &&
+                   y >= 0 && y < ConfigurationManager.Instance.World_Height * ConfigurationManager.Instance.Chunk_Diameter &&
+                   z >= 0 && z < ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter;
+        }
+
         /// <summary>
         /// Random number generator.
         /// </summary>
@@ -51,6 +71,7 @@ namespace Antymology.Terrain
         void Awake()
         {
             antPrefab = Resources.Load<GameObject>("Ant_Icon");
+            queenAntPrefab = Resources.Load<GameObject>("Queen_Blue");
 
             // Generate new random number generator
             RNG = new System.Random(ConfigurationManager.Instance.Seed);
@@ -83,6 +104,7 @@ namespace Antymology.Terrain
             Camera.main.transform.LookAt(new Vector3(Blocks.GetLength(0), 0, Blocks.GetLength(2)));
 
             GenerateAnts();
+            GenerateQueenAnt();
         }
 
         /// <summary>
@@ -92,22 +114,25 @@ namespace Antymology.Terrain
 
         private void GenerateAnts()
         {
-            int numberOfAntsToSpawn = 1000;
+            int numberOfAntsToSpawn = 100; // Define the number of ants to spawn.
 
             for (int i = 0; i < numberOfAntsToSpawn; i++)
             {
                 bool validPositionFound = false;
                 Vector3 spawnPosition = Vector3.zero;
 
+                // Loop until a valid spawn position is found.
                 while (!validPositionFound)
                 {
                     int x = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
                     int z = RNG.Next(0, ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter);
                     int y = 0;
 
+                    // Iterate through the blocks vertically to find a spawn height.
                     for (int j = Blocks.GetLength(1) - 1; j >= 0; j--)
                     {
                         AbstractBlock block = Blocks[x, j, z];
+                        // Check if the block is solid and not a container block.
                         if (block != null && !(block is AirBlock) && !(block is ContainerBlock)) // Avoid spawning on AirBlock or ContainerBlock
                         {
                             y = j + 1; 
@@ -124,6 +149,106 @@ namespace Antymology.Terrain
                     ant.transform.parent = this.transform;
                 }
             }
+        }
+
+
+        private void GenerateQueenAnt()
+        {
+            bool validPositionFound = false;
+            Vector3 spawnPosition = Vector3.zero;
+
+            // Used for spawning not close to container blocks.
+            int safeMargin = 10;
+
+            // Calculate the middle section of the map.
+            int minX = safeMargin;
+            int maxX = ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter - safeMargin;
+            int minZ = safeMargin;
+            int maxZ = ConfigurationManager.Instance.World_Diameter * ConfigurationManager.Instance.Chunk_Diameter - safeMargin;
+
+            int attempts = 0;
+            int maxAttempts = 1000;
+
+            while (!validPositionFound && attempts < maxAttempts)
+            {
+                attempts++;
+                // Generate coordinates within the middle section.
+                int x = RNG.Next(minX, maxX);
+                int z = RNG.Next(minZ, maxZ);
+
+                for (int j = Blocks.GetLength(1) - 1; j >= 0; j--)
+                {
+                    AbstractBlock block = Blocks[x, j, z];
+                    if (block != null && !(block is ContainerBlock) && IsPositionSafeFromContainers(x, j, z))
+                    {
+                        spawnPosition = new Vector3(x, j + 1, z); // Spawn on top of the block.
+                        validPositionFound = true;
+                        break; 
+                    }
+                }
+            }
+
+            if (validPositionFound)
+            {
+                GameObject queenAnt = Instantiate(queenAntPrefab, spawnPosition, Quaternion.identity);
+                queenAnt.transform.parent = this.transform; 
+            }
+            else
+            {
+                Debug.LogError("Failed to find a valid spawn position for the queen ant.");
+            }
+        }
+
+        private bool IsPositionSafeFromContainers(int x, int y, int z)
+        {
+            int maxX = Blocks.GetLength(0) - 1;
+            int maxY = Blocks.GetLength(1) - 1;
+            int maxZ = Blocks.GetLength(2) - 1;
+
+            // Define positions to check, ensuring they are within bounds.
+            (int, int, int)[] positionsToCheck = {
+                (Math.Max(0, x - 1), y, z),
+                (Math.Min(maxX, x + 1), y, z),
+                (x, Math.Max(0, y - 1), z),
+                (x, Math.Min(maxY, y + 1), z),
+                (x, y, Math.Max(0, z - 1)),
+                (x, y, Math.Min(maxZ, z + 1))
+            };
+
+            foreach (var (checkX, checkY, checkZ) in positionsToCheck)
+            {
+                // Check if the position is within bounds and if the block is a container block.
+                if (IsValidPosition(checkX, checkY, checkZ))
+                {
+                    var block = Blocks[checkX, checkY, checkZ];
+                    if (block is ContainerBlock)
+                    {
+                        return false; 
+                    }
+                }
+            }
+
+            return true; // No adjacent container blocks, position is safe.
+        }
+
+        // Used for UI text count
+        public int CountNestBlocks()
+        {
+            int count = 0;
+            for (int x = 0; x < Blocks.GetLength(0); x++)
+            {
+                for (int y = 0; y < Blocks.GetLength(1); y++)
+                {
+                    for (int z = 0; z < Blocks.GetLength(2); z++)
+                    {
+                        if (Blocks[x, y, z] != null && Blocks[x, y, z] is NestBlock && Blocks[x, y, z].isVisible())
+                        {
+                            count++;
+                        }
+                    }
+                }
+            }
+            return count;
         }
 
         #endregion
@@ -186,28 +311,15 @@ namespace Antymology.Terrain
         /// </summary>
         public void SetBlock(int WorldXCoordinate, int WorldYCoordinate, int WorldZCoordinate, AbstractBlock toSet)
         {
-            if
-            (
-                WorldXCoordinate < 0 ||
-                WorldYCoordinate < 0 ||
-                WorldZCoordinate < 0 ||
-                WorldXCoordinate > Blocks.GetLength(0) ||
-                WorldYCoordinate > Blocks.GetLength(1) ||
-                WorldZCoordinate > Blocks.GetLength(2)
-            )
+            if (IsValidPosition(WorldXCoordinate, WorldYCoordinate, WorldZCoordinate))
             {
-                Debug.Log("Attempted to set a block which didn't exist");
-                return;
+                Blocks[WorldXCoordinate, WorldYCoordinate, WorldZCoordinate] = toSet;
+                SetChunkContainingBlockToUpdate(WorldXCoordinate, WorldYCoordinate, WorldZCoordinate);
             }
-
-            Blocks[WorldXCoordinate, WorldYCoordinate, WorldZCoordinate] = toSet;
-
-            SetChunkContainingBlockToUpdate
-            (
-                WorldXCoordinate,
-                WorldYCoordinate,
-                WorldZCoordinate
-            );
+            else
+            {
+                Debug.LogError("Attempted to set a block out of bounds.");
+            }
         }
 
         /// <summary>
@@ -409,30 +521,47 @@ namespace Antymology.Terrain
         /// <param name="worldXCoordinate"></param>
         /// <param name="worldYCoordinate"></param>
         /// <param name="worldZCoordinate"></param>
-        private void SetChunkContainingBlockToUpdate(int worldXCoordinate, int worldYCoordinate, int worldZCoordinate)
-        {
-            //Updates the chunk containing this block
-            int updateX = Mathf.FloorToInt(worldXCoordinate / ConfigurationManager.Instance.Chunk_Diameter);
-            int updateY = Mathf.FloorToInt(worldYCoordinate / ConfigurationManager.Instance.Chunk_Diameter);
-            int updateZ = Mathf.FloorToInt(worldZCoordinate / ConfigurationManager.Instance.Chunk_Diameter);
-            Chunks[updateX, updateY, updateZ].updateNeeded = true;
-            
-            // Also flag all 6 neighbours for update as well
-            if(updateX - 1 >= 0)
-                Chunks[updateX - 1, updateY, updateZ].updateNeeded = true;
-            if (updateX + 1 < Chunks.GetLength(0))
-                Chunks[updateX + 1, updateY, updateZ].updateNeeded = true;
 
-            if (updateY - 1 >= 0)
-                Chunks[updateX, updateY - 1, updateZ].updateNeeded = true;
-            if (updateY + 1 < Chunks.GetLength(1))
-                Chunks[updateX, updateY + 1, updateZ].updateNeeded = true;
+        private void SetChunkContainingBlockToUpdate(int worldXCoordinate, int worldYCoordinate, int worldZCoordinate) {
+            if (!IsValidPosition(worldXCoordinate, worldYCoordinate, worldZCoordinate)) {
+                Debug.LogError($"Attempted to update chunk out of bounds at {worldXCoordinate}, {worldYCoordinate}, {worldZCoordinate}.");
+                return;
+            }
 
-            if (updateZ - 1 >= 0)
-                Chunks[updateX, updateY, updateZ - 1].updateNeeded = true;
-            if (updateX + 1 < Chunks.GetLength(2))
-                Chunks[updateX, updateY, updateZ + 1].updateNeeded = true;
+            // Calculate chunk indices based on world coordinates.
+            int updateX = worldXCoordinate / ConfigurationManager.Instance.Chunk_Diameter;
+            int updateY = worldYCoordinate / ConfigurationManager.Instance.Chunk_Diameter;
+            int updateZ = worldZCoordinate / ConfigurationManager.Instance.Chunk_Diameter;
+
+            // Ensure the calculated chunk indices are within the bounds of the Chunks array.
+            if (updateX >= 0 && updateX < Chunks.GetLength(0) &&
+                updateY >= 0 && updateY < Chunks.GetLength(1) &&
+                updateZ >= 0 && updateZ < Chunks.GetLength(2)) {
+
+                // Mark the corresponding chunk as needing an update.
+                Chunks[updateX, updateY, updateZ].updateNeeded = true;
+                
+                // Flag all 6 neighbors for update as well, with bounds checking.
+                FlagNeighborForUpdate(updateX - 1, updateY, updateZ);
+                FlagNeighborForUpdate(updateX + 1, updateY, updateZ);
+                FlagNeighborForUpdate(updateX, updateY - 1, updateZ);
+                FlagNeighborForUpdate(updateX, updateY + 1, updateZ);
+                FlagNeighborForUpdate(updateX, updateY, updateZ - 1);
+                FlagNeighborForUpdate(updateX, updateY, updateZ + 1);
+            } else {
+                Debug.LogError($"Calculated chunk indices out of bounds: X={updateX}, Y={updateY}, Z={updateZ}");
+            }
         }
+
+        // Helper method to flag neighbor chunks for update with bounds checking.
+        private void FlagNeighborForUpdate(int x, int y, int z) {
+            if (x >= 0 && x < Chunks.GetLength(0) &&
+                y >= 0 && y < Chunks.GetLength(1) &&
+                z >= 0 && z < Chunks.GetLength(2)) {
+                Chunks[x, y, z].updateNeeded = true;
+            }
+        }
+
 
         #endregion
 
