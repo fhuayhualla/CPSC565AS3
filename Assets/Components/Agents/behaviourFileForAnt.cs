@@ -6,6 +6,7 @@ using System.Collections;
 using UnityEngine;
 
 
+
 public class AntBehaviour : MonoBehaviour
 {
     public float moveSpeed = 4f;
@@ -17,15 +18,11 @@ public class AntBehaviour : MonoBehaviour
     private bool isClimbing = false;
     private Stack<Vector3> lastPositions = new Stack<Vector3>(); // To backtrack
     private int noPathFoundCount = 0;
-    // private bool isCollidingWithContainerBlock = false;
-    // private ContainerBlock containerBlock; // Reference to ContainerBlock
-
 
     void Start()
     {
         targetRotation = transform.rotation;
         startPosition = transform.position;
-        // containerBlock = GetComponentInChildren<ContainerBlock>();
     }
 
     void Update()
@@ -34,7 +31,19 @@ public class AntBehaviour : MonoBehaviour
         {
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
 
-            if (PathIsClear())
+            // Check for ContainerBlock in front of the ant
+            Vector3 positionInFront = transform.position + transform.forward;
+            var blockInFront = WorldManager.Instance.GetBlock(Mathf.FloorToInt(positionInFront.x), Mathf.FloorToInt(positionInFront.y), Mathf.FloorToInt(positionInFront.z));
+
+            if (blockInFront is ContainerBlock)
+            {
+                HandleContainerBlockEncounter();
+            }
+            else if (blockInFront is AcidicBlock)
+            {
+                HandleAcidicBlockEncounter();
+            }
+            else if (PathIsClear())
             {
                 MoveAnt();
                 lastPositions.Push(transform.position); // Remember last position for potential backtracking
@@ -49,6 +58,17 @@ public class AntBehaviour : MonoBehaviour
                 Backtrack();
             }
         }
+    }
+
+    void HandleContainerBlockEncounter()
+    {
+        TurnAround();
+    }
+
+    void HandleAcidicBlockEncounter()
+    {
+        // Example action: turn the ant around to avoid the acidic block
+        TurnAround();
     }
 
     void MoveAnt()
@@ -174,31 +194,6 @@ public class AntBehaviour : MonoBehaviour
         TurnRight(); 
     }
 
-    // void OnCollisionEnter(Collision collision)
-    // {
-    //     if (collision.gameObject.GetComponent<ContainerBlock>() != null)
-    //     {
-    //         isCollidingWithContainerBlock = true;
-    //         TurnAround();
-    //     }
-    //     else if (collision.gameObject.CompareTag("Ant"))
-    //     {
-    //         FindClearPath();
-    //     }
-    // }
-    // void OnTriggerEnter(Collider other)
-    // {
-    //     if (other.gameObject.GetComponent<ContainerBlock>() != null)
-    //     {
-    //         isCollidingWithContainerBlock = true;
-    //         TurnAround();
-    //     }
-    //     else if (other.gameObject.CompareTag("Ant"))
-    //     {
-    //         FindClearPath();
-    //     }
-    // }
-
 
     void TurnAround()
     {
@@ -235,4 +230,12 @@ public class AntBehaviour : MonoBehaviour
         }
     }
 }
+
+
+
+
+
+
+
+
 
