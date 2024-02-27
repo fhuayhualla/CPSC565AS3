@@ -27,7 +27,6 @@ This project simulates the life of an ant colony within a virtual environment, b
   - **Nest Blocks:** Constructed by the queen for colony expansion.
 
   ## Project Extension : Pheromone Implementation
-  - **Pheromone Implementation**
   - **Pheromone Following for Nest Expansion:** Worker ants detect and leave behind pheromones, as well as they follow the trail of nest building pheromones released by the queen (the queen would leave 2 units, ants would leave 1 unit of pheromone). The closer they are to the queen or the nest expansion site, the stronger the pheromone signal they should detect, guiding their movement and activities.
   - **Nest Construction Based on Pheromone Strength:** The queen ant decides on the next location for nest block placement based on the concentration of pheromones in an area.
 
