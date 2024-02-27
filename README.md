@@ -26,6 +26,11 @@ This project simulates the life of an ant colony within a virtual environment, b
   - **Acidic Blocks:** Hazardous areas that harm ant health upon contact.
   - **Nest Blocks:** Constructed by the queen for colony expansion.
 
+  ## Project Extension
+  - **Pheromone Implementation**
+  - **Pheromone Following for Nest Expansion:**Worker ants detect and leave behind pheromones, as well as they follow the trail of nest building pheromones released by the queen (the queen would leave 2 units, ants would leave 1 unit of pheromone). The closer they are to the queen or the nest expansion site, the stronger the pheromone signal they should detect, guiding their movement and activities.
+  - **Nest Construction Based on Pheromone Strength:**The queen ant decides on the next location for nest block placement based on the concentration of pheromones in an area.
+
 ## Assets and Libraries
 - **Stylized Ant Character:** The simulation uses the 'Stylized Ant Character' asset to represent the ants as these are 3D. Worker ants are depicted in brown, while the queen ant is shown in blue.
 - **TextMesh Pro:** This library is used for displaying UI text elements within the simulation, such as the number of nest blocks.
